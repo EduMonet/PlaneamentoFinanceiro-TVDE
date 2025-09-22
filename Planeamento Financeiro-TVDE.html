@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DriveAI — Planeador Financeiro TVDE</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f6f8;
+      color: #333;
+      padding: 20px;
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      padding: 30px;
+    }
+    h1 {
+      text-align: center;
+      color: #1a73e8;
+      margin-bottom: 10px;
+    }
+    h2 {
+      text-align: center;
+      font-weight: normal;
+      color: #555;
+      margin-bottom: 30px;
+    }
+    .input-group {
+      margin-bottom: 15px;
+    }
+    .input-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+    .input-group input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+    .dias-select {
+      margin-bottom: 20px;
+    }
+    .calcular-btn {
+      background: #1a73e8;
+      color: #fff;
+      border: none;
+      padding: 10px 18px;
+      font-size: 15px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .calcular-btn:hover {
+      background: #155ab6;
+    }
+    .resultado {
+      margin-top: 25px;
+      padding: 15px;
+      background: #e8f0fe;
+      border-left: 5px solid #1a73e8;
+      border-radius: 8px;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+    footer {
+      margin-top: 50px;
+      text-align: center;
+      font-size: 14px;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>DriveAI</h1>
+    <h2>Planeador Financeiro Mensal TVDE</h2>
+
+    <div class="input-group">
+      <label for="aluguer">Aluguer da viatura (€)</label>
+      <input type="number" id="aluguer" placeholder="Ex: 450">
+    </div>
+
+    <div class="input-group">
+      <label for="seguros">Seguros (TVDE + pessoal) (€)</label>
+      <input type="number" id="seguros" placeholder="Ex: 80">
+    </div>
+
+    <div class="input-group">
+      <label for="manutencao">Manutenção e revisões (€)</label>
+      <input type="number" id="manutencao" placeholder="Ex: 50">
+    </div>
+
+    <div class="input-group">
+      <label for="combustivel">Combustível ou eletricidade (€)</label>
+      <input type="number" id="combustivel" placeholder="Ex: 200">
+    </div>
+
+    <div class="input-group">
+      <label for="extras">Outros custos (multas, apps, passageiros...) (€)</label>
+      <input type="number" id="extras" placeholder="Ex: 30">
+    </div>
+
+    <div class="dias-select">
+      <label for="dias">Dias trabalhados por mês</label>
+      <select id="dias">
+        <option value="22">22 dias</option>
+        <option value="24">24 dias</option>
+        <option value="26">26 dias</option>
+        <option value="30">30 dias</option>
+      </select>
+    </div>
+
+    <button class="calcular-btn" onclick="calcularMetaDiaria()">Calcular Meta Diária</button>
+
+    <div class="resultado" id="resultado"></div>
+  </div>
+
+  <footer>
+    Desenvolvido por DriveAI — Plataforma de apoio ao motorista TVDE
+  </footer>
+
+  <script>
+    function calcularMetaDiaria() {
+      const aluguer = parseFloat(document.getElementById('aluguer').value) || 0;
+      const seguros = parseFloat(document.getElementById('seguros').value) || 0;
+      const manutencao = parseFloat(document.getElementById('manutencao').value) || 0;
+      const combustivel = parseFloat(document.getElementById('combustivel').value) || 0;
+      const extras = parseFloat(document.getElementById('extras').value) || 0;
+      const dias = parseInt(document.getElementById('dias').value);
+
+      const totalDespesas = aluguer + seguros + manutencao + combustivel + extras;
+      const metaDiaria = (totalDespesas / dias).toFixed(2);
+
+      document.getElementById('resultado').innerHTML = `
+        <strong>Total de despesas mensais:</strong> ${totalDespesas.toFixed(2)}€<br>
+        <strong>Meta mínima diária:</strong> ${metaDiaria}€/dia<br>
+        <span style="color:#555;">Este é o valor que precisas gerar por dia para cobrir todos os custos.</span>
+      `;
+    }
+  </script>
+</body>
+</html>
+
