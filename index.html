@@ -172,22 +172,22 @@
     let grafico;
 
     function calcularPlaneamento() {
-      const dias = parseInt(document.getElementById('dias').value);
-      const km = parseFloat(document.getElementById('km').value);
-      const consumo = parseFloat(document.getElementById('consumo').value);
-      const precoCombustivel = parseFloat(document.getElementById('precoCombustivel').value);
-      const aluguer = parseFloat(document.getElementById('aluguer').value);
-      const seguros = parseFloat(document.getElementById('seguros').value);
-      const manutencao = parseFloat(document.getElementById('manutencao').value);
-      const extras = parseFloat(document.getElementById('extras').value);
-      const segSocial = parseFloat(document.getElementById('segSocial').value);
-      const irs = parseFloat(document.getElementById('irs').value);
-      const vencimento = parseFloat(document.getElementById('vencimento').value);
+      const dias = parseInt(document.getElementById('dias').value) || 0;
+      const km = parseFloat(document.getElementById('km')?.value) || 0;
+      const consumo = parseFloat(document.getElementById('consumo')?.value) || 0;
+      const precoCombustivel = parseFloat(document.getElementById('precoCombustivel')?.value) || 0;
+      const aluguer = parseFloat(document.getElementById('aluguer')?.value) || 0;
+      const seguros = parseFloat(document.getElementById('seguros')?.value) || 0;
+      const manutencao = parseFloat(document.getElementById('manutencao')?.value) || 0;
+      const extras = parseFloat(document.getElementById('extras')?.value) || 0;
+      const segSocial = parseFloat(document.getElementById('segSocial')?.value) || 0;
+      const irs = parseFloat(document.getElementById('irs')?.value) || 0;
+      const vencimento = parseFloat(document.getElementById('vencimento')?.value) || 0;
 
       const custoEnergia = (km / 100) * consumo * precoCombustivel;
       const totalDespesas = aluguer + seguros + manutencao + extras + segSocial + irs + vencimento + custoEnergia;
-      const metaDiaria = (totalDespesas / dias).toFixed(2);
-      const metaPorKm = (totalDespesas / km).toFixed(2);
+      const metaDiaria = dias ? (totalDespesas / dias).toFixed(2) : '—';
+      const metaPorKm = km ? (totalDespesas / km).toFixed(2) : '—';
 
       document.getElementById('resultado').innerHTML = `
         <strong>Total de despesas mensais:</strong> ${totalDespesas.toFixed(2)}€<br>
@@ -197,9 +197,4 @@
         <span style="color:#555;">Este é o valor que precisas gerar por dia para cobrir todos os custos e atingir o vencimento desejado.</span>
       `;
 
-      const ctx = document.getElementById('graficoCustos').getContext('2d');
-      const dados = {
-        labels: ['Aluguer', 'Seguros', 'Manutenção', 'Extras', 'Segurança Social', 'IRS', 'Vencimento', 'Energia'],
-        datasets: [{
-          label: 'Distribuição de Custos (€)',
-          data: [aluguer, seguros, manutencao, extras,
+      const ctx = document.get
