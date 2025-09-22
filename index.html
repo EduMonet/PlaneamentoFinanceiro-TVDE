@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>DriveAI — Planeador Financeiro TVDE</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -12,7 +14,7 @@
       padding: 20px;
     }
     .container {
-      max-width: 900px;
+      max-width: 1000px;
       margin: auto;
       background: #fff;
       border-radius: 12px;
@@ -38,15 +40,12 @@
       font-weight: bold;
       margin-bottom: 6px;
     }
-    .input-group input {
+    .input-group input, .input-group select {
       width: 100%;
       padding: 10px;
       border: 1px solid #ccc;
       border-radius: 8px;
       font-size: 15px;
-    }
-    .dias-select {
-      margin-bottom: 20px;
     }
     .calcular-btn {
       background: #1a73e8;
@@ -56,6 +55,8 @@
       font-size: 15px;
       border-radius: 8px;
       cursor: pointer;
+      margin-right: 10px;
+      margin-top: 10px;
     }
     .calcular-btn:hover {
       background: #155ab6;
@@ -69,6 +70,10 @@
       font-size: 16px;
       line-height: 1.5;
     }
+    canvas {
+      margin-top: 30px;
+      max-width: 100%;
+    }
     footer {
       margin-top: 50px;
       text-align: center;
@@ -81,6 +86,41 @@
   <div class="container">
     <h1>DriveAI</h1>
     <h2>Planeador Financeiro Mensal TVDE</h2>
+
+    <div class="input-group">
+      <label for="dias">Dias trabalhados por mês</label>
+      <select id="dias">
+        <option value="22">22 dias</option>
+        <option value="24">24 dias</option>
+        <option value="26">26 dias</option>
+        <option value="30">30 dias</option>
+      </select>
+    </div>
+
+    <div class="input-group">
+      <label for="km">Quilómetros percorridos por mês</label>
+      <input type="number" id="km" placeholder="Ex: 2500">
+    </div>
+
+    <div class="input-group">
+      <label for="consumo">Consumo médio (litros ou kWh / 100km)</label>
+      <input type="number" id="consumo" placeholder="Ex: 6.5">
+    </div>
+
+    <div class="input-group">
+      <label for="tipoCombustivel">Tipo de combustível</label>
+      <select id="tipoCombustivel">
+        <option value="Gasolina">Gasolina</option>
+        <option value="Gasóleo">Gasóleo</option>
+        <option value="Gás">Gás</option>
+        <option value="Eletricidade">Eletricidade</option>
+      </select>
+    </div>
+
+    <div class="input-group">
+      <label for="precoCombustivel">Preço por litro ou kWh (€)</label>
+      <input type="number" id="precoCombustivel" placeholder="Ex: 1.75">
+    </div>
 
     <div class="input-group">
       <label for="aluguer">Aluguer da viatura (€)</label>
@@ -98,28 +138,30 @@
     </div>
 
     <div class="input-group">
-      <label for="combustivel">Combustível ou eletricidade (€)</label>
-      <input type="number" id="combustivel" placeholder="Ex: 200">
-    </div>
-
-    <div class="input-group">
       <label for="extras">Outros custos (multas, apps, passageiros...) (€)</label>
       <input type="number" id="extras" placeholder="Ex: 30">
     </div>
 
-    <div class="dias-select">
-      <label for="dias">Dias trabalhados por mês</label>
-      <select id="dias">
-        <option value="22">22 dias</option>
-        <option value="24">24 dias</option>
-        <option value="26">26 dias</option>
-        <option value="30">30 dias</option>
-      </select>
+    <div class="input-group">
+      <label for="segSocial">Segurança Social (€)</label>
+      <input type="number" id="segSocial" placeholder="Ex: 150">
     </div>
 
-    <button class="calcular-btn" onclick="calcularMetaDiaria()">Calcular Meta Diária</button>
+    <div class="input-group">
+      <label for="irs">IRS estimado (€)</label>
+      <input type="number" id="irs" placeholder="Ex: 100">
+    </div>
+
+    <div class="input-group">
+      <label for="vencimento">Vencimento mensal desejado (€)</label>
+      <input type="number" id="vencimento" placeholder="Ex: 1000">
+    </div>
+
+    <button class="calcular-btn" onclick="calcularPlaneamento()">Calcular Planeamento</button>
+    <button class="calcular-btn" onclick="exportarPDF()">📄 Exportar para PDF</button>
 
     <div class="resultado" id="resultado"></div>
+    <canvas id="graficoCustos"></canvas>
   </div>
 
   <footer>
@@ -127,24 +169,37 @@
   </footer>
 
   <script>
-    function calcularMetaDiaria() {
-      const aluguer = parseFloat(document.getElementById('aluguer').value) || 0;
-      const seguros = parseFloat(document.getElementById('seguros').value) || 0;
-      const manutencao = parseFloat(document.getElementById('manutencao').value) || 0;
-      const combustivel = parseFloat(document.getElementById('combustivel').value) || 0;
-      const extras = parseFloat(document.getElementById('extras').value) || 0;
-      const dias = parseInt(document.getElementById('dias').value);
+    let grafico;
 
-      const totalDespesas = aluguer + seguros + manutencao + combustivel + extras;
+    function calcularPlaneamento() {
+      const dias = parseInt(document.getElementById('dias').value);
+      const km = parseFloat(document.getElementById('km').value);
+      const consumo = parseFloat(document.getElementById('consumo').value);
+      const precoCombustivel = parseFloat(document.getElementById('precoCombustivel').value);
+      const aluguer = parseFloat(document.getElementById('aluguer').value);
+      const seguros = parseFloat(document.getElementById('seguros').value);
+      const manutencao = parseFloat(document.getElementById('manutencao').value);
+      const extras = parseFloat(document.getElementById('extras').value);
+      const segSocial = parseFloat(document.getElementById('segSocial').value);
+      const irs = parseFloat(document.getElementById('irs').value);
+      const vencimento = parseFloat(document.getElementById('vencimento').value);
+
+      const custoEnergia = (km / 100) * consumo * precoCombustivel;
+      const totalDespesas = aluguer + seguros + manutencao + extras + segSocial + irs + vencimento + custoEnergia;
       const metaDiaria = (totalDespesas / dias).toFixed(2);
+      const metaPorKm = (totalDespesas / km).toFixed(2);
 
       document.getElementById('resultado').innerHTML = `
         <strong>Total de despesas mensais:</strong> ${totalDespesas.toFixed(2)}€<br>
         <strong>Meta mínima diária:</strong> ${metaDiaria}€/dia<br>
-        <span style="color:#555;">Este é o valor que precisas gerar por dia para cobrir todos os custos.</span>
+        <strong>Meta por quilómetro:</strong> ${metaPorKm}€/km<br>
+        <strong>Custo energético mensal:</strong> ${custoEnergia.toFixed(2)}€<br>
+        <span style="color:#555;">Este é o valor que precisas gerar por dia para cobrir todos os custos e atingir o vencimento desejado.</span>
       `;
-    }
-  </script>
-</body>
-</html>
 
+      const ctx = document.getElementById('graficoCustos').getContext('2d');
+      const dados = {
+        labels: ['Aluguer', 'Seguros', 'Manutenção', 'Extras', 'Segurança Social', 'IRS', 'Vencimento', 'Energia'],
+        datasets: [{
+          label: 'Distribuição de Custos (€)',
+          data: [aluguer, seguros, manutencao, extras,
