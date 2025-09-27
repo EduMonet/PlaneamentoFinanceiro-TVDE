@@ -82,7 +82,7 @@
     }
   </style>
 </head>
-<script>
+  <script>
   let grafico;
 
   function calcularPlaneamento() {
@@ -97,29 +97,38 @@
     const segSocial = parseFloat(document.getElementById('segSocial')?.value) || 0;
     const irs = parseFloat(document.getElementById('irs')?.value) || 0;
     const vencimento = parseFloat(document.getElementById('vencimento')?.value) || 0;
+    const lucro = parseFloat(document.getElementById('lucro')?.value) || 0;
+    const caixa = parseFloat(document.getElementById('caixa')?.value) || 0;
 
     const custoEnergia = (km / 100) * consumo * precoCombustivel;
     const totalDespesas = aluguer + seguros + manutencao + extras + segSocial + irs + vencimento + custoEnergia;
+    const totalRecomendado = totalDespesas + lucro + caixa;
+
     const metaDiaria = dias ? (totalDespesas / dias).toFixed(2) : '—';
     const metaPorKm = km ? (totalDespesas / km).toFixed(2) : '—';
+    const metaDiariaRecomendada = dias ? (totalRecomendado / dias).toFixed(2) : '—';
+    const metaKmRecomendada = km ? (totalRecomendado / km).toFixed(2) : '—';
 
     document.getElementById('resultado').innerHTML = `
       <strong>Total de despesas mensais:</strong> ${totalDespesas.toFixed(2)}€<br>
       <strong>Meta mínima diária:</strong> ${metaDiaria}€/dia<br>
       <strong>Meta por quilómetro:</strong> ${metaPorKm}€/km<br>
-      <strong>Custo energético mensal:</strong> ${custoEnergia.toFixed(2)}€<br>
-      <span style="color:#555;">Este é o valor que precisas gerar por dia para cobrir todos os custos e atingir o vencimento desejado.</span>
+      <strong>Custo energético mensal:</strong> ${custoEnergia.toFixed(2)}€<br><br>
+      <strong>Meta diária recomendada (com lucro e caixa):</strong> ${metaDiariaRecomendada}€/dia<br>
+      <strong>Meta por km recomendada:</strong> ${metaKmRecomendada}€/km<br>
+      <span style="color:#555;">Este é o valor que precisas gerar por dia para cobrir todos os custos, atingir o vencimento desejado e garantir lucro e sustentabilidade empresarial.</span>
     `;
 
     const ctx = document.getElementById('graficoCustos').getContext('2d');
     const dados = {
-      labels: ['Aluguer', 'Seguros', 'Manutenção', 'Extras', 'Segurança Social', 'IRS', 'Vencimento', 'Energia'],
+      labels: ['Aluguer', 'Seguros', 'Manutenção', 'Extras', 'Segurança Social', 'IRS', 'Vencimento', 'Energia', 'Lucro', 'Caixa'],
       datasets: [{
         label: 'Distribuição de Custos (€)',
-        data: [aluguer, seguros, manutencao, extras, segSocial, irs, vencimento, custoEnergia],
+        data: [aluguer, seguros, manutencao, extras, segSocial, irs, vencimento, custoEnergia, lucro, caixa],
         backgroundColor: [
           '#4285F4', '#EA4335', '#FBBC05', '#34A853',
-          '#9C27B0', '#FF9800', '#00BCD4', '#607D8B'
+          '#9C27B0', '#FF9800', '#00BCD4', '#607D8B',
+          '#795548', '#8BC34A'
         ]
       }]
     };
@@ -142,7 +151,6 @@
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    // Dados inseridos
     const campos = [
       { label: "Dias trabalhados", value: document.getElementById('dias')?.value },
       { label: "Km/mês", value: document.getElementById('km')?.value },
@@ -155,7 +163,9 @@
       { label: "Extras", value: document.getElementById('extras')?.value },
       { label: "Segurança Social", value: document.getElementById('segSocial')?.value },
       { label: "IRS", value: document.getElementById('irs')?.value },
-      { label: "Vencimento desejado", value: document.getElementById('vencimento')?.value }
+      { label: "Vencimento desejado", value: document.getElementById('vencimento')?.value },
+      { label: "Lucro empresarial", value: document.getElementById('lucro')?.value },
+      { label: "Reserva de caixa", value: document.getElementById('caixa')?.value }
     ];
 
     doc.setFontSize(14);
@@ -169,12 +179,10 @@
       y += 6;
     });
 
-    // Resultados
     const resultado = document.getElementById('resultado')?.innerText;
     doc.text("📊 Resultados:", 20, y + 6);
     doc.text(resultado, 20, y + 12);
 
-    // Gráfico
     const canvas = document.getElementById('graficoCustos');
     const imgData = canvas.toDataURL('image/png');
     doc.addPage();
@@ -205,6 +213,8 @@
     <div class="input-group"><label for="segSocial">Segurança Social (€)</label><input type="number" id="segSocial" placeholder="Ex: 150"></div>
     <div class="input-group"><label for="irs">IRS estimado (€)</label><input type="number" id="irs" placeholder="Ex: 100"></div>
     <div class="input-group"><label for="vencimento">Vencimento mensal desejado (€)</label><input type="number" id="vencimento" placeholder="Ex: 1000"></div>
+    <div class="input-group"><label for="lucro">Lucro empresarial desejado (€)</label><input type="number" id="lucro" placeholder="Ex: 300"></div>
+    <div class="input-group"><label for="caixa">Reserva de caixa mensal (€)</label><input type="number" id="caixa" placeholder="Ex: 200"></div>
 
     <!-- Botões -->
     <button class="calcular-btn" onclick="calcularPlaneamento()">Calcular Planeamento</button>
