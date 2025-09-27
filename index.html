@@ -97,12 +97,14 @@
     const segSocial = parseFloat(document.getElementById('segSocial')?.value) || 0;
     const irs = parseFloat(document.getElementById('irs')?.value) || 0;
     const vencimento = parseFloat(document.getElementById('vencimento')?.value) || 0;
-    const lucro = parseFloat(document.getElementById('lucro')?.value) || 0;
-    const caixa = parseFloat(document.getElementById('caixa')?.value) || 0;
 
     const custoEnergia = (km / 100) * consumo * precoCombustivel;
     const totalDespesas = aluguer + seguros + manutencao + extras + segSocial + irs + vencimento + custoEnergia;
-    const totalRecomendado = totalDespesas + lucro + caixa;
+
+    // Margem sugerida: 10% lucro + 5% reserva de caixa
+    const margemLucro = totalDespesas * 0.10;
+    const margemCaixa = totalDespesas * 0.05;
+    const totalRecomendado = totalDespesas + margemLucro + margemCaixa;
 
     const metaDiaria = dias ? (totalDespesas / dias).toFixed(2) : '—';
     const metaPorKm = km ? (totalDespesas / km).toFixed(2) : '—';
@@ -114,17 +116,17 @@
       <strong>Meta mínima diária:</strong> ${metaDiaria}€/dia<br>
       <strong>Meta por quilómetro:</strong> ${metaPorKm}€/km<br>
       <strong>Custo energético mensal:</strong> ${custoEnergia.toFixed(2)}€<br><br>
-      <strong>Meta diária recomendada (com lucro e caixa):</strong> ${metaDiariaRecomendada}€/dia<br>
+      <strong>Meta diária recomendada (com margem empresarial):</strong> ${metaDiariaRecomendada}€/dia<br>
       <strong>Meta por km recomendada:</strong> ${metaKmRecomendada}€/km<br>
-      <span style="color:#555;">Este é o valor que precisas gerar por dia para cobrir todos os custos, atingir o vencimento desejado e garantir lucro e sustentabilidade empresarial.</span>
+      <span style="color:#555;">Inclui margem de 10% para lucro e 5% para reserva de caixa. Valor sugerido para garantir sustentabilidade e crescimento.</span>
     `;
 
     const ctx = document.getElementById('graficoCustos').getContext('2d');
     const dados = {
-      labels: ['Aluguer', 'Seguros', 'Manutenção', 'Extras', 'Segurança Social', 'IRS', 'Vencimento', 'Energia', 'Lucro', 'Caixa'],
+      labels: ['Aluguer', 'Seguros', 'Manutenção', 'Extras', 'Segurança Social', 'IRS', 'Vencimento', 'Energia', 'Lucro (10%)', 'Caixa (5%)'],
       datasets: [{
         label: 'Distribuição de Custos (€)',
-        data: [aluguer, seguros, manutencao, extras, segSocial, irs, vencimento, custoEnergia, lucro, caixa],
+        data: [aluguer, seguros, manutencao, extras, segSocial, irs, vencimento, custoEnergia, margemLucro, margemCaixa],
         backgroundColor: [
           '#4285F4', '#EA4335', '#FBBC05', '#34A853',
           '#9C27B0', '#FF9800', '#00BCD4', '#607D8B',
@@ -163,9 +165,7 @@
       { label: "Extras", value: document.getElementById('extras')?.value },
       { label: "Segurança Social", value: document.getElementById('segSocial')?.value },
       { label: "IRS", value: document.getElementById('irs')?.value },
-      { label: "Vencimento desejado", value: document.getElementById('vencimento')?.value },
-      { label: "Lucro empresarial", value: document.getElementById('lucro')?.value },
-      { label: "Reserva de caixa", value: document.getElementById('caixa')?.value }
+      { label: "Vencimento desejado", value: document.getElementById('vencimento')?.value }
     ];
 
     doc.setFontSize(14);
@@ -213,8 +213,6 @@
     <div class="input-group"><label for="segSocial">Segurança Social (€)</label><input type="number" id="segSocial" placeholder="Ex: 150"></div>
     <div class="input-group"><label for="irs">IRS estimado (€)</label><input type="number" id="irs" placeholder="Ex: 100"></div>
     <div class="input-group"><label for="vencimento">Vencimento mensal desejado (€)</label><input type="number" id="vencimento" placeholder="Ex: 1000"></div>
-    <div class="input-group"><label for="lucro">Lucro empresarial desejado (€)</label><input type="number" id="lucro" placeholder="Ex: 300"></div>
-    <div class="input-group"><label for="caixa">Reserva de caixa mensal (€)</label><input type="number" id="caixa" placeholder="Ex: 200"></div>
 
     <!-- Botões -->
     <button class="calcular-btn" onclick="calcularPlaneamento()">Calcular Planeamento</button>
