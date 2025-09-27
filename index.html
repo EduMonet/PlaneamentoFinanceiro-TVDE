@@ -82,7 +82,7 @@
     }
   </style>
 </head>
-  <script>
+<script>
   let grafico;
 
   function calcularPlaneamento() {
@@ -138,15 +138,48 @@
     });
   }
 
-  function exportarPDF() {
+  async function exportarPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    const resultado = document.getElementById('resultado').innerText;
+    // Dados inseridos
+    const campos = [
+      { label: "Dias trabalhados", value: document.getElementById('dias')?.value },
+      { label: "Km/mês", value: document.getElementById('km')?.value },
+      { label: "Consumo (L/kWh)", value: document.getElementById('consumo')?.value },
+      { label: "Tipo de combustível", value: document.getElementById('tipoCombustivel')?.value },
+      { label: "Preço por litro/kWh", value: document.getElementById('precoCombustivel')?.value },
+      { label: "Aluguer", value: document.getElementById('aluguer')?.value },
+      { label: "Seguros", value: document.getElementById('seguros')?.value },
+      { label: "Manutenção", value: document.getElementById('manutencao')?.value },
+      { label: "Extras", value: document.getElementById('extras')?.value },
+      { label: "Segurança Social", value: document.getElementById('segSocial')?.value },
+      { label: "IRS", value: document.getElementById('irs')?.value },
+      { label: "Vencimento desejado", value: document.getElementById('vencimento')?.value }
+    ];
+
     doc.setFontSize(14);
     doc.text("Planeamento Financeiro TVDE", 20, 20);
     doc.setFontSize(12);
-    doc.text(resultado, 20, 30);
+    doc.text("📋 Dados inseridos:", 20, 30);
+
+    let y = 36;
+    campos.forEach(campo => {
+      doc.text(`${campo.label}: ${campo.value || '—'}`, 20, y);
+      y += 6;
+    });
+
+    // Resultados
+    const resultado = document.getElementById('resultado')?.innerText;
+    doc.text("📊 Resultados:", 20, y + 6);
+    doc.text(resultado, 20, y + 12);
+
+    // Gráfico
+    const canvas = document.getElementById('graficoCustos');
+    const imgData = canvas.toDataURL('image/png');
+    doc.addPage();
+    doc.text("📈 Gráfico de Distribuição de Custos", 20, 20);
+    doc.addImage(imgData, 'PNG', 15, 30, 180, 90);
 
     doc.save("planeamento-financeiro-tvde.pdf");
   }
