@@ -11,6 +11,8 @@
     <style>
         :root { --navy: #000080; --gold: #c5a059; --light-bg: #f4f7f9; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--light-bg); color: #333; padding: 20px; margin: 0; }
+        
+        /* Interface Principal */
         .container { max-width: 900px; margin: auto; background: #fff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 30px; border-top: 8px solid var(--navy); box-sizing: border-box; }
         h1 { text-align: center; color: var(--navy); margin-bottom: 5px; text-transform: uppercase; font-size: 1.6rem; }
         h2 { text-align: center; font-weight: normal; color: #666; margin-bottom: 30px; font-size: 1rem; }
@@ -25,14 +27,16 @@
         .btn-pdf { background: #444; display: none; }
 
         .resultado { margin-top: 25px; padding: 20px; background: #fff; border-left: 5px solid var(--gold); border-radius: 8px; font-size: 15px; line-height: 1.6; display: none; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); }
-        canvas { margin-top: 30px; max-width: 100%; background: #fff; padding: 10px; border-radius: 8px; }
+        
+        /* Ajuste do Gráfico na UI */
+        #graficoWrapper { width: 100%; max-width: 500px; margin: 30px auto; display: none; }
         
         footer { margin-top: 50px; text-align: center; font-size: 0.8rem; color: #777; }
-
         @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
+
     <div class="container">
         <h1>Voz Do Condutor</h1>
         <h2>Planeador Financeiro Mensal TVDE</h2>
@@ -53,20 +57,23 @@
 
         <div class="btn-container">
             <button class="calcular-btn" onclick="calcularPlaneamento()">Calcular Planeamento</button>
-            <button id="btnPdf" class="calcular-btn btn-pdf" onclick="gerarPdfEvidencia()">📥 Exportar Relatório PDF</button>
+            <button id="btnPdf" class="calcular-btn btn-pdf" onclick="gerarPdfEvidencia()">📥 Exportar Relatório Completo</button>
         </div>
 
         <div class="resultado" id="resultado"></div>
-        <canvas id="graficoCustos" style="display:none;"></canvas>
+        
+        <div id="graficoWrapper">
+            <canvas id="graficoCustos"></canvas>
+        </div>
     </div>
 
     <footer>
         Desenvolvido por <strong>Voz Do Condutor</strong> — Unidade de Inteligência TVDE<br>
-        MOMENTO EFICAZ – UNIP. LDA | © 2025
+        | © 2025
     </footer>
 
     <script>
-        let grafico;
+        let graficoInstance = null;
 
         function calcularPlaneamento() {
             const getVal = (id) => parseFloat(document.getElementById(id).value) || 0;
@@ -79,7 +86,7 @@
                                   getVal('extras') + getVal('segSocial') + getVal('irs') + 
                                   getVal('vencimento') + custoEnergia;
 
-            const totalRec = totalDespesas * 1.15; // Margem 15% VDC
+            const totalRec = totalDespesas * 1.15; // Margem VDC
 
             const resDiv = document.getElementById('resultado');
             resDiv.style.display = 'block';
@@ -89,57 +96,81 @@
                 <strong>Meta Diária Mínima (Break-even):</strong> ${(totalDespesas / dias).toFixed(2)}€/dia<br>
                 <strong>Break-even por KM:</strong> ${(totalDespesas / km).toFixed(2)}€/km<br>
                 <hr style="border:0; border-top:1px solid #ccc; margin:10px 0;">
-                <strong style="color:var(--navy);">Meta Diária Recomendada (VDC):</strong> <span style="font-size:1.1rem;">${(totalRec / dias).toFixed(2)}€/dia</span>
+                <strong style="color:var(--navy);">Meta Diária Recomendada (VDC):</strong> <span style="font-size:1.1rem; color:var(--navy);">${(totalRec / dias).toFixed(2)}€/dia</span>
             `;
 
+            document.getElementById('graficoWrapper').style.display = 'block';
             document.getElementById('btnPdf').style.display = 'inline-block';
-            renderizarGrafico(getVal('aluguer') + getVal('seguros') + getVal('manutencao'), custoEnergia, getVal('vencimento'));
+            
+            renderizarGrafico(
+                (getVal('aluguer') + getVal('seguros') + getVal('manutencao') + getVal('extras')), 
+                custoEnergia, 
+                (getVal('vencimento') + getVal('segSocial') + getVal('irs'))
+            );
         }
 
-        function renderizarGrafico(fixos, energia, salario) {
-            const ctx = document.getElementById('graficoCustos');
-            ctx.style.display = 'block';
-            if (grafico) grafico.destroy();
-            grafico = new Chart(ctx, {
+        function renderizarGrafico(fixos, energia, pessoal) {
+            const ctx = document.getElementById('graficoCustos').getContext('2d');
+            if (graficoInstance) graficoInstance.destroy();
+            
+            graficoInstance = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: ['Custos Viatura', 'Energia', 'Vencimento/Impostos'],
                     datasets: [{
-                        data: [fixos, energia, salario],
-                        backgroundColor: ['#000080', '#EA4335', '#34A853']
+                        data: [fixos, energia, pessoal],
+                        backgroundColor: ['#000080', '#EA4335', '#34A853'],
+                        borderWidth: 2
                     }]
+                },
+                options: {
+                    responsive: true,
+                    animation: { duration: 0 } // Desativa animação para captura imediata no PDF
                 }
             });
         }
 
         async function gerarPdfEvidencia() {
-            const resHTML = document.getElementById('resultado').innerHTML;
             const canvas = document.getElementById('graficoCustos');
+            const resHTML = document.getElementById('resultado').innerHTML;
             const imgData = canvas.toDataURL('image/png', 1.0);
 
+            // Template robusto para evitar cortes e brancos
             const htmlRelatorio = `
-                <div style="width: 170mm; margin: 0 auto; padding: 15mm; border: 2mm solid #000080; font-family: Arial; background: #fff;">
-                    <div style="text-align: center; border-bottom: 2px solid #000080; padding-bottom: 10px; margin-bottom: 20px;">
-                        <h1 style="color: #000080; font-size: 20px;">PLANEAMENTO FINANCEIRO ESTRATÉGICO</h1>
-                        <p>Voz do Condutor — Unidade de Inteligência</p>
+                <div style="width: 175mm; margin: 0 auto; padding: 15mm; border: 2mm solid #000080; box-sizing: border-box; font-family: Arial, sans-serif; background: #fff; min-height: 260mm;">
+                    <div style="text-align: center; border-bottom: 2px solid #000080; padding-bottom: 15px; margin-bottom: 20px;">
+                        <h1 style="color: #000080; font-size: 22px; margin: 0; text-transform: uppercase;">Planeamento Financeiro Estratégico</h1>
+                        <p style="font-weight: bold; margin: 5px 0;">Voz do Condutor — Unidade de Inteligência</p>
                     </div>
-                    <div style="font-size: 14px; line-height: 1.6;">${resHTML}</div>
-                    <div style="text-align: center; margin-top: 20px;">
-                        <img src="${imgData}" style="width: 100mm; border: 1px solid #eee;">
+                    
+                    <div style="margin-top: 20px;">
+                        <p style="font-size: 12px; color: #555;"><strong>Extração:</strong> ${new Date().toLocaleString('pt-PT')}</p>
                     </div>
-                    <div style="margin-top: 30px; font-size: 10px; color: #666; background: #f4f4f4; padding: 10px; border-radius: 4px;">
-                        <strong>NOTA TÉCNICA:</strong> Documento gerado para fins de peritagem e planeamento financeiro TVDE. 
-                        Mantenha a reserva de caixa ativa.
+
+                    <div style="font-size: 15px; line-height: 1.8; margin: 25px 0; color: #333; padding: 15px; background: #f9f9f9; border-radius: 6px; border: 1px solid #eee;">
+                        ${resHTML}
+                    </div>
+
+                    <div style="text-align: center; margin-top: 30px;">
+                        <p style="font-size: 14px; font-weight: bold; color: var(--navy); margin-bottom: 15px;">Distribuição Proporcional de Custos Mensais</p>
+                        <img src="${imgData}" style="width: 110mm; height: auto;">
+                    </div>
+
+                    <div style="margin-top: 50px; font-size: 10px; color: #666; background: #f0f0f0; padding: 15px; border-radius: 4px; line-height: 1.5;">
+                        <strong>CERTIFICAÇÃO VDC:</strong> Este relatório constitui uma evidência técnica de planeamento financeiro para operadores TVDE. 
+                        Os dados baseiam-se nos inputs fornecidos e visam a sustentabilidade económica da atividade através da antecipação de riscos operacionais.
                     </div>
                 </div>`;
 
             const opt = {
-                margin: 5,
-                filename: 'VDC_Planeamento.pdf',
-                html2canvas: { scale: 2, useCORS: true },
+                margin: 0,
+                filename: 'VDC_Planeamento_Financeiro.pdf',
+                image: { type: 'jpeg', quality: 1 },
+                html2canvas: { scale: 3, useCORS: true, logging: false },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
+            // Processamento garantido
             html2pdf().from(htmlRelatorio).set(opt).save();
         }
     </script>
