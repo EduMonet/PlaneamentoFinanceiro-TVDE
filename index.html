@@ -4,25 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Voz Do Condutor — Planeador Financeiro TVDE</title>
+    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
     <style>
         :root { --navy: #000080; --gold: #c5a059; --light-bg: #f4f7f9; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--light-bg); color: #333; padding: 20px; margin: 0; }
         .container { max-width: 900px; margin: auto; background: #fff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 30px; border-top: 8px solid var(--navy); box-sizing: border-box; }
         h1 { text-align: center; color: var(--navy); margin-bottom: 5px; text-transform: uppercase; font-size: 1.6rem; }
         h2 { text-align: center; font-weight: normal; color: #666; margin-bottom: 30px; font-size: 1rem; }
+        
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; font-weight: bold; margin-bottom: 6px; font-size: 0.85rem; color: var(--navy); }
         .input-group input, .input-group select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; }
+        
         .btn-container { text-align: center; margin-top: 20px; }
         .calcular-btn { background: var(--navy); color: #fff; border: none; padding: 15px 25px; font-size: 14px; border-radius: 8px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.3s; margin: 5px; }
-        .calcular-btn:hover { background: #000066; }
-        .btn-pdf { background: #444; }
+        .btn-pdf { background: #444; display: none; }
+
         .resultado { margin-top: 25px; padding: 20px; background: #fff; border-left: 5px solid var(--gold); border-radius: 8px; font-size: 15px; line-height: 1.6; display: none; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); }
         canvas { margin-top: 30px; max-width: 100%; background: #fff; padding: 10px; border-radius: 8px; }
-        footer { margin-top: 50px; text-align: center; font-size: 0.8rem; color: #777; line-height: 1.5; }
+        
+        footer { margin-top: 50px; text-align: center; font-size: 0.8rem; color: #777; }
+
         @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -30,6 +36,7 @@
     <div class="container">
         <h1>Voz Do Condutor</h1>
         <h2>Planeador Financeiro Mensal TVDE</h2>
+
         <div class="form-grid">
             <div class="input-group"><label>Dias trabalhados/mês</label><select id="dias"><option value="22">22 dias</option><option value="24">24 dias</option><option value="26">26 dias</option><option value="30">30 dias</option></select></div>
             <div class="input-group"><label>Km percorridos/mês</label><input type="number" id="km" value="2500"></div>
@@ -41,64 +48,100 @@
             <div class="input-group"><label>Custos Extras (€)</label><input type="number" id="extras" value="30"></div>
             <div class="input-group"><label>Segurança Social (€)</label><input type="number" id="segSocial" value="150"></div>
             <div class="input-group"><label>IRS Estimado (€)</label><input type="number" id="irs" value="100"></div>
-            <div class="input-group" style="grid-column: span 2;"><label>Vencimento Mensal Desejado (€)</label><input type="number" id="vencimento" value="1000"></div>
+            <div class="input-group" style="grid-column: span 2;"><label>Vencimento Mensal Desejado (Líquido) (€)</label><input type="number" id="vencimento" value="1000"></div>
         </div>
+
         <div class="btn-container">
-            <button class="calcular-btn" onclick="calcularPlaneamento()">Calcular</button>
-            <button id="btnPdf" class="calcular-btn btn-pdf" style="display:none;" onclick="gerarPdfEvidencia()">📥 Exportar PDF</button>
+            <button class="calcular-btn" onclick="calcularPlaneamento()">Calcular Planeamento</button>
+            <button id="btnPdf" class="calcular-btn btn-pdf" onclick="gerarPdfEvidencia()">📥 Exportar Relatório PDF</button>
         </div>
+
         <div class="resultado" id="resultado"></div>
         <canvas id="graficoCustos" style="display:none;"></canvas>
     </div>
-    <footer>Desenvolvido por <strong>Voz Do Condutor</strong> | Unidade de Inteligência TVDE</footer>
+
+    <footer>
+        Desenvolvido por <strong>Voz Do Condutor</strong> — Unidade de Inteligência TVDE<br>
+        MOMENTO EFICAZ – UNIP. LDA | © 2025
+    </footer>
 
     <script>
         let grafico;
+
         function calcularPlaneamento() {
             const getVal = (id) => parseFloat(document.getElementById(id).value) || 0;
+            
             const dias = getVal('dias');
             const km = getVal('km');
             const custoEnergia = (km / 100) * getVal('consumo') * getVal('precoCombustivel');
-            const totalDespesas = getVal('aluguer') + getVal('seguros') + getVal('manutencao') + getVal('extras') + getVal('segSocial') + getVal('irs') + getVal('vencimento') + custoEnergia;
-            const totalRec = totalDespesas * 1.15; // Margem 15%
+            
+            const totalDespesas = getVal('aluguer') + getVal('seguros') + getVal('manutencao') + 
+                                  getVal('extras') + getVal('segSocial') + getVal('irs') + 
+                                  getVal('vencimento') + custoEnergia;
+
+            const totalRec = totalDespesas * 1.15; // Margem 15% VDC
 
             const resDiv = document.getElementById('resultado');
             resDiv.style.display = 'block';
             resDiv.innerHTML = `
-                <strong>Custo Mensal Total:</strong> ${totalDespesas.toFixed(2)}€<br>
-                <strong>Meta Diária Mínima:</strong> ${(totalDespesas / dias).toFixed(2)}€/dia<br>
-                <strong>Meta Diária VDC (Segurança):</strong> ${(totalRec / dias).toFixed(2)}€/dia
+                <h3 style="color:var(--navy); margin:0 0 10px 0;">Análise de Viabilidade Financeira</h3>
+                <strong>Custo Operacional Total:</strong> ${totalDespesas.toFixed(2)}€/mês<br>
+                <strong>Meta Diária Mínima (Break-even):</strong> ${(totalDespesas / dias).toFixed(2)}€/dia<br>
+                <strong>Break-even por KM:</strong> ${(totalDespesas / km).toFixed(2)}€/km<br>
+                <hr style="border:0; border-top:1px solid #ccc; margin:10px 0;">
+                <strong style="color:var(--navy);">Meta Diária Recomendada (VDC):</strong> <span style="font-size:1.1rem;">${(totalRec / dias).toFixed(2)}€/dia</span>
             `;
+
             document.getElementById('btnPdf').style.display = 'inline-block';
-            renderizarGrafico(custoEnergia);
+            renderizarGrafico(getVal('aluguer') + getVal('seguros') + getVal('manutencao'), custoEnergia, getVal('vencimento'));
         }
 
-        function renderizarGrafico(energia) {
+        function renderizarGrafico(fixos, energia, salario) {
             const ctx = document.getElementById('graficoCustos');
             ctx.style.display = 'block';
             if (grafico) grafico.destroy();
             grafico = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Custos Fixos', 'Energia', 'Vencimento'],
-                    datasets: [{ data: [1000, energia, 1000], backgroundColor: ['#000080', '#EA4335', '#34A853'] }]
+                    labels: ['Custos Viatura', 'Energia', 'Vencimento/Impostos'],
+                    datasets: [{
+                        data: [fixos, energia, salario],
+                        backgroundColor: ['#000080', '#EA4335', '#34A853']
+                    }]
                 }
             });
         }
 
-        function gerarPdfEvidencia() {
-            const content = document.getElementById('resultado').innerHTML;
+        async function gerarPdfEvidencia() {
+            const resHTML = document.getElementById('resultado').innerHTML;
             const canvas = document.getElementById('graficoCustos');
-            const img = canvas.toDataURL('image/png');
-            const html = `
-                <div style="width:170mm; margin:0 auto; padding:15mm; border:2mm solid #000080; font-family:Arial;">
-                    <h1 style="color:#000080; text-align:center;">PLANEAMENTO FINANCEIRO TVDE</h1>
-                    <div style="margin:20px 0;">${content}</div>
-                    <div style="text-align:center;"><img src="${img}" style="width:100mm;"></div>
+            const imgData = canvas.toDataURL('image/png', 1.0);
+
+            const htmlRelatorio = `
+                <div style="width: 170mm; margin: 0 auto; padding: 15mm; border: 2mm solid #000080; font-family: Arial; background: #fff;">
+                    <div style="text-align: center; border-bottom: 2px solid #000080; padding-bottom: 10px; margin-bottom: 20px;">
+                        <h1 style="color: #000080; font-size: 20px;">PLANEAMENTO FINANCEIRO ESTRATÉGICO</h1>
+                        <p>Voz do Condutor — Unidade de Inteligência</p>
+                    </div>
+                    <div style="font-size: 14px; line-height: 1.6;">${resHTML}</div>
+                    <div style="text-align: center; margin-top: 20px;">
+                        <img src="${imgData}" style="width: 100mm; border: 1px solid #eee;">
+                    </div>
+                    <div style="margin-top: 30px; font-size: 10px; color: #666; background: #f4f4f4; padding: 10px; border-radius: 4px;">
+                        <strong>NOTA TÉCNICA:</strong> Documento gerado para fins de peritagem e planeamento financeiro TVDE. 
+                        Mantenha a reserva de caixa ativa.
+                    </div>
                 </div>`;
-            html2pdf().from(html).set({ margin: 5, filename: 'Planeamento_VDC.pdf' }).save();
+
+            const opt = {
+                margin: 5,
+                filename: 'VDC_Planeamento.pdf',
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().from(htmlRelatorio).set(opt).save();
         }
     </script>
 </body>
 </html>
-
